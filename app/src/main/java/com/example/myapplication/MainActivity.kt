@@ -123,28 +123,12 @@ private val parameters =
             listOf(3f, 3.1f, 3.3f, 3.2f, 3.4f, 3.1f, 3.2f),
         ),
         Parameter(
-            "Ammonia",
-            "0.12 ppm",
-            "0–0.25 ppm",
-            "🧪",
-            "Optimal",
-            listOf(.1f, .11f, .13f, .12f, .11f, .12f, .12f),
-        ),
-        Parameter(
-            "Nitrite",
-            "0.08 ppm",
-            "0–0.1 ppm",
+            "EC / TDS",
+            "650 µS/cm",
+            "400–1200 µS/cm",
             "⚡",
-            "Good",
-            listOf(.07f, .08f, .09f, .08f, .07f, .08f, .08f),
-        ),
-        Parameter(
-            "Nitrate",
-            "18 ppm",
-            "0–40 ppm",
-            "🌿",
-            "Safe",
-            listOf(16f, 17f, 18f, 17f, 18f, 19f, 18f),
+            "Optimal",
+            listOf(620f, 630f, 640f, 650f, 645f, 655f, 650f),
         ),
     )
 
@@ -209,7 +193,7 @@ fun AquaSmartApp() {
                             "splash" -> Welcome { nav("home") }
                             "home" -> Home(name, fahrenheit, nav)
                             "monitoring" -> Monitoring(fahrenheit)
-                            "feeding" -> Feeding(prefs)
+                            "feeding" -> ConnectedFeeding()
                             "scanner" -> Scanner(false)
                             "fish-detection" -> Scanner(true)
                             "analytics" -> Analytics(fahrenheit)
@@ -805,107 +789,6 @@ private fun Monitoring(f: Boolean) {
 }
 
 @Composable
-private fun Feeding(prefs: AppPreferences) {
-    var portion by rememberSaveable {
-        mutableStateOf(prefs.text("portion", "45").toFloatOrNull() ?: 45f)
-    }
-    var fed by rememberSaveable { mutableStateOf(false) }
-    var confirm by remember { mutableStateOf(false) }
-    Page("Fish Feeding", "Smart automated feeding system") {
-        DemoNote()
-        AquaCard {
-            Label("Next Automated Feeding", size = 12, color = Muted)
-            Label("06:00 PM", size = 28, bold = true, color = Teal)
-            Label("Sample schedule · 45g portion · 48 fish", size = 11, color = Muted)
-        }
-        Action(if (fed) "✓ Demo Feeding Complete" else "🍽️ Feed Now", { confirm = true })
-        if (fed)
-            Label(
-                "Demo feed of ${portion.roundToInt()}g recorded. No food was dispensed.",
-                size = 12,
-                color = Green,
-            )
-        AquaCard {
-            Label("Portion Size", bold = true)
-            Label("${portion.roundToInt()} grams", size = 25, bold = true, color = Teal)
-            Slider(
-                portion,
-                {
-                    portion = it
-                    fed = false
-                },
-                valueRange = 10f..100f,
-                steps = 17,
-                onValueChangeFinished = { prefs.save("portion", portion.roundToInt().toString()) },
-            )
-            Label("Manual feeding amount", size = 11, color = Muted)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("🐟" to "48 fish", "⚖️" to "130g / day", "📋" to "1 / 2 feeds").forEach { (i, t)
-                ->
-                AquaCard(Modifier.weight(1f)) {
-                    Label(i, size = 22)
-                    Label(t, size = 12, bold = true)
-                }
-            }
-        }
-        AquaCard {
-            Label("Feeding Schedule", bold = true)
-            listOf("06:00 AM" to "45g", "12:00 PM" to "40g", "06:00 PM" to "45g").forEachIndexed {
-                index,
-                (time, amount) ->
-                var enabled by rememberSaveable {
-                    mutableStateOf(prefs.bool("schedule$index", index != 1))
-                }
-                ToggleRow(
-                    time,
-                    amount,
-                    enabled,
-                    {
-                        enabled = it
-                        prefs.save("schedule$index", it)
-                    },
-                )
-            }
-        }
-        AquaCard {
-            Label("📊 Automated Feeding Based On:", bold = true, color = Teal)
-            listOf(
-                    "Fish population & biomass",
-                    "Scheduled time slots",
-                    "Real-time water conditions",
-                    "System AI calculations",
-                )
-                .forEach { Label("•  $it", size = 12, color = Muted) }
-            Label(
-                "Schedule switches are saved locally for the prototype.",
-                size = 10,
-                color = Muted,
-            )
-        }
-    }
-    if (confirm)
-        AlertDialog(
-            onDismissRequest = { confirm = false },
-            title = { Text("Simulate feeding?") },
-            text = {
-                Text("Record a demo feed of ${portion.roundToInt()}g. No feeder is connected.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        fed = true
-                        confirm = false
-                    }
-                ) {
-                    Text("Simulate")
-                }
-            },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancel") } },
-        )
-}
-
-@Composable
 private fun Scanner(fish: Boolean) {
     var phase by rememberSaveable { mutableStateOf(0) }
     LaunchedEffect(phase) {
@@ -997,9 +880,7 @@ private fun Scanner(fish: Boolean) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(
                             "pH" to Teal,
-                            "Ammonia" to Color(0xFFF59E0B),
-                            "Nitrite" to Color(0xFFEF4444),
-                            "Nitrate" to Green,
+                            "EC / TDS" to Color(0xFFF59E0B),
                         )
                         .forEach { (label, c) ->
                             Column(
@@ -1033,9 +914,7 @@ private fun Scanner(fish: Boolean) {
                 Label("Scan Results vs. Sensor Readings", bold = true)
                 listOf(
                         Triple("pH", "7.0–7.5", "7.2"),
-                        Triple("Ammonia", "0.0–0.25 ppm", "0.12 ppm"),
-                        Triple("Nitrite", "0.0–0.10 ppm", "0.08 ppm"),
-                        Triple("Nitrate", "10–20 ppm", "18 ppm"),
+                        Triple("EC / TDS", "400–1200 µS/cm", "650 µS/cm"),
                     )
                     .forEach { (p, kit, sensor) ->
                         Row(
@@ -1075,9 +954,7 @@ private fun Analytics(f: Boolean) {
     var range by rememberSaveable { mutableStateOf("7D") }
     var selected by rememberSaveable { mutableStateOf("pH Level") }
     val p = parameters.first { it.name == selected }
-    val base =
-        if (selected == "Ammonia") listOf(.1f, .11f, .13f, .15f, .18f, .2f, .22f) else p.trend
-    val values = if (f && selected == "Temperature") base.map { it * 1.8f + 32 } else base
+    val values = if (f && selected == "Temperature") p.trend.map { it * 1.8f + 32 } else p.trend
     Page("Predictive Analytics", "Water Quality Forecast") {
         DemoNote()
         Chips(listOf("1D", "3D", "7D", "30D"), range, { range = it })
@@ -1104,22 +981,15 @@ private fun Analytics(f: Boolean) {
             }
         }
         AquaCard {
-            Label("🤖 AI Insight", bold = true)
-            if (selected == "Ammonia") {
-                Badge("Warning")
-                Label("Possible ammonia increase detected within 24 hours", bold = true)
+            Label("🤖 Insights", bold = true)
+            if (selected == "EC / TDS") {
+                Badge("Safe")
+                Label("EC / TDS levels are optimal for nutrient uptake", bold = true)
                 Label(
-                    "Example forecast: ammonia may reach 0.25 ppm within the next day.",
+                    "Current conductivity of 650 µS/cm is ideal for fish and plant growth.",
                     size = 12,
                     color = Muted,
                 )
-                Label("Sample preventive actions", bold = true, color = Teal)
-                listOf(
-                        "Perform a 20% partial water change",
-                        "Reduce feeding by 10% for 2 days",
-                        "Increase aeration temporarily",
-                    )
-                    .forEach { Label("• $it", size = 12, color = Muted) }
             } else {
                 Badge("Safe")
                 Label(
@@ -1168,10 +1038,10 @@ private val demoAlerts =
         ),
         DemoAlert(
             "Water Quality",
-            "High Ammonia Detected",
-            "Ammonia at 0.28 ppm — above threshold.",
+            "EC / TDS Optimal",
+            "Nutrient concentration stable at 650 µS/cm.",
             "Yesterday 11:40 PM",
-            "Critical",
+            "Normal",
         ),
         DemoAlert(
             "Feeding",
@@ -1304,7 +1174,7 @@ private fun Settings(
         AquaCard {
             Label("NOTIFICATIONS", size = 11, color = Muted, bold = true)
             listOf(
-                    Triple("waterAlerts", "Water Quality Alerts", "pH, ammonia, dissolved oxygen"),
+                    Triple("waterAlerts", "Water Quality Alerts", "pH, EC/TDS, dissolved oxygen"),
                     Triple("feedAlerts", "Feeding Notifications", "Scheduled and manual feeds"),
                     Triple("systemAlerts", "System Alerts", "Device status, connectivity"),
                 )

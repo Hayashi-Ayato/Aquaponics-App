@@ -50,16 +50,10 @@ class AquaSmartUiTest {
     }
 
     @Test
-    fun manualFeedingRequiresExplicitDemoConfirmation() {
+    fun feederCannotMoveOrFeedWhileDisconnected() {
         enter()
         app.onNodeWithText("Feed").performClick()
-        app.onNodeWithText("🍽️ Feed Now").performScrollTo().performClick()
-        app.onNodeWithText("Simulate feeding?").assertIsDisplayed()
-        app.onNodeWithText("Cancel").performClick()
-        app.onNodeWithText("✓ Demo Feeding Complete").assertDoesNotExist()
-        app.onNodeWithText("🍽️ Feed Now").performClick()
-        app.onNodeWithText("Simulate").performClick()
-        app.onNodeWithText("✓ Demo Feeding Complete").assertIsDisplayed()
+        app.onNodeWithText("Feed Now").performScrollTo().assertIsNotEnabled()
+        app.onNodeWithText("STOP FEEDER").performScrollTo().assertIsNotEnabled()
     }
 }
-

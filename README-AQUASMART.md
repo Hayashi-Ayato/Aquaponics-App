@@ -1,5 +1,17 @@
 # AquaSmart Android UI
 
+## Connected feeder update — 17 October 2026
+
+The Feed screen now uses `FeederScreen.kt` for a real local Wi-Fi feeder connection, servo-position setup, empty-cup zeroing, known-mass calibration, saved Uno settings, and manual feeding. It requires the matching UnoFeeder and ESP32Bridge v2 firmware. The former demo feeding screen was removed. Other monitoring, devices, analytics, alerts and home readings remain sample data; feeding schedules are not connected.
+
+The feeder uses the phone's Wi-Fi network directly at 192.168.4.1. The app requests local-network permission on Android 17+, restricts cleartext HTTP to that address, and does not automatically retry movement/feeding commands. Feed Now remains disabled until the Uno reports ready. A running batch continues under Uno control if only the phone disconnects. Initial physical calibration and a catch-tray test are still required.
+
+The new code has not been fully built or tested on hardware in the agent environment: Gradle failed at its directory-access check, and the installed Arduino compilers failed to start with Windows DLL relocation errors. The verification results below describe the earlier prototype only. Build and install the updated app from Android Studio. Updated UI test source checks that feeding, stopping, zeroing, calibration and saving are disabled while disconnected.
+
+Firmware and wiring guide: `C:\Users\Jaymarc John Jamog\Documents\Codex\2026-10-16\ca\outputs\AquaSmartConnected\START-HERE.md`.
+
+The original prototype notes below are retained for context; the connected Feed screen supersedes their feeding-related statements.
+
 Implemented directly in your Android Studio project:
 C:\Users\Jaymarc John Jamog\AndroidStudioProjects\MyApplication
 
